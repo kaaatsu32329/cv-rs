@@ -1,0 +1,15 @@
+[package]
+name = "covrus"
+version = "0.1.0"
+edition = "2021"
+authors = ["kaaatsu32329 <kaaatsu32329@gmail.com>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ndarray = "0.15.4"
+gtk = "^0.6.0"
+gdk-pixbuf = "0.15.4"
+relm = "^0.16.0"
+relm-derive = "^0.16.0"
+rscam = "*"
