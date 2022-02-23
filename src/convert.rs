@@ -1,6 +1,6 @@
 use ndarray::{Array, Array2, Array3};
 
-pub fn cvt_img2array(rgb_image: RgbImage) -> Array3<u8> {
+pub fn cvt_img2array(rgb_image: &RgbImage) -> Array3<u8> {
     let mut array_image = vec![];
     let width = rgb_image.width() as usize;
     let height = rgb_image.height() as usize;
@@ -14,7 +14,7 @@ pub fn cvt_img2array(rgb_image: RgbImage) -> Array3<u8> {
     Array::from_shape_vec((height, width, 3 as usize), array_image).unwrap()
 }
 
-pub fn cvt_rgb2hsv(rgb_array: Array3<u8>) -> Array3<f32> { // Cylinder model
+pub fn cvt_rgb2hsv(rgb_array: &Array3<u8>) -> Array3<f32> { // Cylinder model
     let mut hsv_array = vec![];
     let width = rgb_array.shape()[1] as usize;
     let height = rgb_array.shape()[0] as usize;
@@ -25,10 +25,7 @@ pub fn cvt_rgb2hsv(rgb_array: Array3<u8>) -> Array3<f32> { // Cylinder model
             red = rgb_array[[y, x, 0]];
             green = rgb_array[[y, x, 1]];
             blue = rgb_array[[y, x, 2]];
-            let max_element = max_min(red, blue, green).0;
-            let min_element = max_min(red, blue, green).1;
-            let which = max_min(red, blue, green).2;
-            let same_all = max_min(red, blue, green).3;
+            let (max_element, min_element, which, same_all) = max_min(red, blue, green);
             if same_all {
                 hsv_array.push(0.);
                 hsv_array.push(0.);
@@ -38,17 +35,17 @@ pub fn cvt_rgb2hsv(rgb_array: Array3<u8>) -> Array3<f32> { // Cylinder model
                     hue = (60. * (green as f32 - blue as f32)) / (max_element - min_element) as f32;
                     if hue < 0. { hue += 360.; }
                     hsv_array.push(hue);
-                    hsv_array.push((max_element as f32 - min_element as f32) / max_element as f32);
+                    hsv_array.push((max_element as f32 - min_element as f32) / max_element as f32 * 255.);
                 } else if which == 2 {
                     hue = (60. * (blue - red) as f32) / (max_element - min_element) as f32 + 120.;
                     if hue < 0. { hue += 360.; }
                     hsv_array.push(hue);
-                    hsv_array.push((max_element as f32 - min_element as f32) / max_element as f32);
+                    hsv_array.push((max_element as f32 - min_element as f32) / max_element as f32 * 255.);
                 } else if which == 3 {
                     hue = (60. * (red - green) as f32) / (max_element - min_element) as f32 + 240.;
                     if hue < 0. { hue += 360.; }
                     hsv_array.push(hue);
-                    hsv_array.push((max_element - min_element) as f32 / max_element as f32);
+                    hsv_array.push((max_element - min_element) as f32 / max_element as f32 * 255.);
                 }
             }
             hsv_array.push(max_element as f32);
@@ -57,13 +54,33 @@ pub fn cvt_rgb2hsv(rgb_array: Array3<u8>) -> Array3<f32> { // Cylinder model
     Array::from_shape_vec((height, width, 3 as usize), hsv_array).unwrap()
 }
 
-pub fn cvt_hsv2rgb(hsv_array: Array3<f32>) -> Array3<u8> {
+pub fn cvt_hsv2rgb(hsv_array: &Array3<f32>) -> Array3<u8> {
 }
 
-pub fn cvt_rgb2hsv_lite(&mut rgb_array: Array3<u8>) {
+pub fn cvt_rgb2gray(rgb_array: &Array3<u8>) -> Array2<f32> {
+    let mut gray_array = vec![];
+    let width = rgb_array.shape()[1] as usize;
+    let height = rgb_array.shape()[0] as usize;
+    for y in 0..height {
+        for x in 0..width {
+            gray_array.push(0.299 * rgb_array[[y, x, 0]] as f32 + 0.587 * rgb_array[[y, x, 1]] as f32 + 0.114 * rgb_array[[y, x, 2]] as f32);
+        }
+    }
+    Array::from_shape_vec((height, width), gray_array).unwrap()
 }
 
-pub fn cvt_hsv2rgb_lite(&mut hsv_array: Array3<u8>) {
+pub fn cvt_gray2rgb(gray_array: &Array2<f32>) -> Array3<u8> {
+    let mut rgb_array = vec![];
+    let width = gray_array.shape()[1] as usize;
+    let height = gray_array.shape()[0] as usize;
+    for y in 0..height {
+        for x in 0..width {
+            rgb_array.push(gray_array[[y, x]] as u8);
+            rgb_array.push(gray_array[[y, x]] as u8);
+            rgb_array.push(gray_array[[y, x]] as u8);
+        }
+    }
+    Array::from_shape_vec((height, width, 3), rgb_array).unwrap()
 }
 
 fn max_min(alpha: u8, beta: u8, gumma: u8) -> (u8, u8, u8, bool) {
