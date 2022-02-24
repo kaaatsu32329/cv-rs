@@ -8,8 +8,4 @@ authors = ["kaaatsu32329 <kaaatsu32329@gmail.com>"]
 
 [dependencies]
 ndarray = "0.15.4"
-gtk = "^0.6.0"
-gdk-pixbuf = "0.15.4"
-relm = "^0.16.0"
-relm-derive = "^0.16.0"
 image = "0.24.0"

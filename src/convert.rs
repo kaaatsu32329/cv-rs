@@ -14,6 +14,18 @@ pub fn cvt_img2array(rgb_image: &RgbImage) -> Array3<u8> {
     Array::from_shape_vec((height, width, 3 as usize), array_image).unwrap()
 }
 
+pub fn cvt_array2img(image_array: &Array3<u8>) -> RgbImage {
+    let width = image_array.shape()[1] as u32;
+    let height = image_array.shape()[0] as u32;
+    let mut rgb_image = RgbImage::new(width, height);
+    for x in 0..width as usize {
+        for y in 0..height as usize {
+            rgb_image.put_pixel(x as u32, y as u32, Rgb([image_array[[y, x, 0]], image_array[[y, x, 1]], image_array[[y, x, 2]]]));
+        }
+    }
+    rgb_image
+}
+
 pub fn cvt_rgb2hsv(rgb_array: &Array3<u8>) -> Array3<f32> { // Cylinder model
     let mut hsv_array = vec![];
     let width = rgb_array.shape()[1] as usize;
@@ -55,6 +67,52 @@ pub fn cvt_rgb2hsv(rgb_array: &Array3<u8>) -> Array3<f32> { // Cylinder model
 }
 
 pub fn cvt_hsv2rgb(hsv_array: &Array3<f32>) -> Array3<u8> {
+    let mut rgb_array = vec![];
+    let width = hsv_array.shape()[1] as usize;
+    let height = hsv_array.shape()[0] as usize;
+    let mut max: f32; let mut min: f32;
+    for y in 0..height {
+        for x in 0..width {
+            max = hsv_array[[y,x,2]];
+            min = hsv_array[[y,x,2]] - ((hsv_array[[y,x,1]] / 255.) * hsv_array[[y,x,2]]);
+            match (hsv_array[[y,x,0]] / 60.) as u8 {
+                0 => {
+                    rgb_array.push(max as u8);
+                    rgb_array.push(((hsv_array[[y,x,0]] as f32 / 60.) * (max - min) as f32 + min as f32) as u8);
+                    rgb_array.push(min as u8);
+                }
+                1 => {
+                    rgb_array.push((((120. - hsv_array[[y,x,0]] as f32) / 60.) * (max - min) as f32 + min as f32) as u8);
+                    rgb_array.push(max as u8);
+                    rgb_array.push(min as u8);
+                }
+                2 => {
+                    rgb_array.push(min as u8);
+                    rgb_array.push(max as u8);
+                    rgb_array.push((((hsv_array[[y,x,0]] as f32 - 120.) / 60.) * (max - min) as f32 + min as f32) as u8);
+                }
+                3 => {
+                    rgb_array.push(min as u8);
+                    rgb_array.push((((240. - hsv_array[[y,x,0]] as f32) / 60.) * (max - min) as f32 + min as f32) as u8);
+                    rgb_array.push(max as u8);
+                }
+                4 => {
+                    rgb_array.push((((hsv_array[[y,x,0]] as f32 - 240.) / 60.) * (max - min) as f32 + min as f32) as u8);
+                    rgb_array.push(min as u8);
+                    rgb_array.push(max as u8);
+                }
+                5 | 6 => {
+                    rgb_array.push(max as u8);
+                    rgb_array.push(min as u8);
+                    rgb_array.push((((360. - hsv_array[[y,x,0]] as f32) / 60.) * (max - min) as f32 + min as f32) as u8);
+                }
+                _ => {
+                    panic!("!!!")
+                }
+            }
+        }
+    }
+    Array::from_shape_vec((height, width, 3 as usize), rgb_array).unwrap()
 }
 
 pub fn cvt_rgb2gray(rgb_array: &Array3<u8>) -> Array2<f32> {
@@ -81,6 +139,17 @@ pub fn cvt_gray2rgb(gray_array: &Array2<f32>) -> Array3<u8> {
         }
     }
     Array::from_shape_vec((height, width, 3), rgb_array).unwrap()
+}
+
+pub fn mask(width: u16, height: u16) -> Array2<bool> {
+    let mut mask_array = vec![];
+    #[allow(unused_variables)]
+    for y in 0..width {
+        for x in 0..height {
+            mask_array.push(false);
+        }
+    }
+    Array::from_shape_vec((height, width), mask_array).unwrap()
 }
 
 fn max_min(alpha: u8, beta: u8, gumma: u8) -> (u8, u8, u8, bool) {
