@@ -31,36 +31,33 @@ pub fn cvt_rgb2hsv(rgb_array: &Array3<u8>) -> Array3<f32> { // Cylinder model
     let mut hsv_array = vec![];
     let width = rgb_array.shape()[1] as usize;
     let height = rgb_array.shape()[0] as usize;
-    let mut hue: f32;
     let mut red; let mut blue; let mut green;
     for y in 0..height {
         for x in 0..width {
             red = rgb_array[[y, x, 0]];
             green = rgb_array[[y, x, 1]];
             blue = rgb_array[[y, x, 2]];
-            let (max_element, min_element, which, same_all) = max_min(red, blue, green);
+            let (max_element, min_element, which, same_all) = max_min(rgb_array[[y, x, 0]], rgb_array[[y, x, 1]], rgb_array[[y, x, 2]]);
             if same_all {
-                hsv_array.push(0.);
                 hsv_array.push(0.);
             }
             else {
-                if which == 1 {
-                    hue = (60. * (green as f32 - blue as f32)) / (max_element - min_element) as f32;
-                    if hue < 0. { hue += 360.; }
-                    hsv_array.push(hue);
-                    hsv_array.push((max_element as f32 - min_element as f32) / max_element as f32 * 255.);
-                } else if which == 2 {
-                    hue = (60. * (blue - red) as f32) / (max_element - min_element) as f32 + 120.;
-                    if hue < 0. { hue += 360.; }
-                    hsv_array.push(hue);
-                    hsv_array.push((max_element as f32 - min_element as f32) / max_element as f32 * 255.);
-                } else if which == 3 {
-                    hue = (60. * (red - green) as f32) / (max_element - min_element) as f32 + 240.;
-                    if hue < 0. { hue += 360.; }
-                    hsv_array.push(hue);
-                    hsv_array.push((max_element - min_element) as f32 / max_element as f32 * 255.);
+                match which {
+                    1 => {
+                        hsv_array.push((60. * ((green as f32 - blue as f32)) / (max_element - min_element) as f32 + 3600.) % 360.);
+                    }
+                    2 => {
+                        hsv_array.push((60. * ((blue as f32 - red as f32)) / (max_element - min_element) as f32 + 3720.) % 360.);
+                    }
+                    3 => {
+                        hsv_array.push((60. * ((red as f32 - green as f32)) / (max_element - min_element) as f32 + 3840.) % 360.);
+                    }
+                    _ => {
+                        panic!("Error to convert RGB to HSV.");
+                    }
                 }
             }
+            hsv_array.push(255. * (max_element - min_element) as f32 / max_element as f32);
             hsv_array.push(max_element as f32);
         }
     }
@@ -102,13 +99,13 @@ pub fn cvt_hsv2rgb(hsv_array: &Array3<f32>) -> Array3<u8> {
                     rgb_array.push(min as u8);
                     rgb_array.push(max as u8);
                 }
-                5 | 6 => {
+                5 => {
                     rgb_array.push(max as u8);
                     rgb_array.push(min as u8);
                     rgb_array.push((((360. - hsv_array[[y,x,0]] as f32) / 60.) * (max - min) as f32 + min as f32) as u8);
                 }
                 _ => {
-                    panic!("!!!")
+                    panic!("!!!");
                 }
             }
         }
@@ -154,21 +151,21 @@ pub fn mask(width: usize, height: usize) -> Array2<bool> {
 }
 
 fn max_min(alpha: u8, beta: u8, gamma: u8) -> (u8, u8, u8, bool) {
-    if alpha == beta || alpha == gamma {
+    if alpha == beta && alpha == gamma {
         return (alpha, alpha, 0, true);
-    } else if alpha > beta || alpha > gamma {
+    } else if alpha >= beta && alpha > gamma {
         if beta > gamma {
             return (alpha, gamma, 1, false);
         } else {
             return (alpha, beta, 1, false);
         }
-    } else if beta > gamma || beta > alpha {
+    } else if beta >= gamma && beta > alpha {
         if gamma > alpha {
             return (beta, alpha, 2, false);
         } else {
             return (beta, gamma, 2, false);
         }
-    } else if gamma > alpha || gamma > beta {
+    } else if gamma >= alpha && gamma > beta {
         if alpha > beta {
             return (gamma, beta, 3, false);
         } else {
