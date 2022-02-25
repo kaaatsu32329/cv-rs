@@ -1,4 +1,5 @@
 use ndarray::{Array, Array2, Array3};
+use image::{RgbImage, Rgb};
 
 pub fn cvt_img2array(rgb_image: &RgbImage) -> Array3<u8> {
     let mut array_image = vec![];
@@ -141,7 +142,7 @@ pub fn cvt_gray2rgb(gray_array: &Array2<f32>) -> Array3<u8> {
     Array::from_shape_vec((height, width, 3), rgb_array).unwrap()
 }
 
-pub fn mask(width: u16, height: u16) -> Array2<bool> {
+pub fn mask(width: usize, height: usize) -> Array2<bool> {
     let mut mask_array = vec![];
     #[allow(unused_variables)]
     for y in 0..width {
@@ -152,26 +153,28 @@ pub fn mask(width: u16, height: u16) -> Array2<bool> {
     Array::from_shape_vec((height, width), mask_array).unwrap()
 }
 
-fn max_min(alpha: u8, beta: u8, gumma: u8) -> (u8, u8, u8, bool) {
-    if alpha == beta || alpha == gumma {
-        return (alpha, alpha, 0, true)
-    } else if alpha > beta || alpha > gumma {
-        if beta > gumma {
-            return (alpha, gumma, 1, false)
+fn max_min(alpha: u8, beta: u8, gamma: u8) -> (u8, u8, u8, bool) {
+    if alpha == beta || alpha == gamma {
+        return (alpha, alpha, 0, true);
+    } else if alpha > beta || alpha > gamma {
+        if beta > gamma {
+            return (alpha, gamma, 1, false);
         } else {
-            return (alpha, beta, 1, false)
+            return (alpha, beta, 1, false);
         }
-    } else if beta > gumma || beta > alpha {
-        if gumma > alpha {
-            return (beta, alpha, 2, false)
+    } else if beta > gamma || beta > alpha {
+        if gamma > alpha {
+            return (beta, alpha, 2, false);
         } else {
-            return (beta, gumma, 2, false)
+            return (beta, gamma, 2, false);
         }
-    } else if gumma > alpha || gumma > beta {
+    } else if gamma > alpha || gamma > beta {
         if alpha > beta {
-            return (gumma, beta, 3, false)
+            return (gamma, beta, 3, false);
         } else {
-            return (gumma, alpha, 3, false)
+            return (gamma, alpha, 3, false);
         }
+    } else {
+        panic!("Error");
     }
 }
