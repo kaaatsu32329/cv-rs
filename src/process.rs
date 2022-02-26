@@ -26,3 +26,22 @@ pub fn gaussian(gray_array: &Array2<f32>) -> Array2<f32> {
     }
     Array::from_shape_vec((height, width), gauss_array).unwrap()
 }
+
+pub fn binarization(gray_array: &Array2<f32>, threshold: f32) -> Array2<bool> {
+    let mut bin_array = vec![];
+    let width = gray_array.shape()[1] as usize;
+    let height = gray_array.shape()[0] as usize;
+    for y in 0..height {
+        for x in 0..width {
+            if gray_array[[y,x]] >= threshold {
+                bin_array.push(true);
+            } else {
+                bin_array.push(false);
+            }
+        }
+    }
+    Array::from_shape_vec((height, width), bin_array).unwrap()
+}
+
+pub fn harris_corner(gray_array: &Array2<f32>) { // -> Array2<bool> {
+}
