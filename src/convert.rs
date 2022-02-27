@@ -139,6 +139,26 @@ pub fn cvt_gray2rgb(gray_array: &Array2<f32>) -> Array3<u8> {
     Array::from_shape_vec((height, width, 3), rgb_array).unwrap()
 }
 
+pub fn cvt_bin2rgb(bin_array: &Array2<bool>) -> Array3<u8> {
+    let mut rgb_array = vec![];
+    let width = bin_array.shape()[1] as usize;
+    let heigth = bin_array.shape()[0] as usize;
+    for y in 0..heigth {
+        for x in 0..width {
+            if bin_array[[y,x]] {
+                rgb_array.push(255);
+                rgb_array.push(255);
+                rgb_array.push(255);
+            } else {
+                rgb_array.push(0);
+                rgb_array.push(0);
+                rgb_array.push(0);
+            }
+        }
+    }
+    Array::from_shape_vec((heigth, width, 3 as usize), rgb_array).unwrap()
+}
+
 pub fn mask(width: usize, height: usize) -> Array2<bool> {
     let mut mask_array = vec![];
     #[allow(unused_variables)]
