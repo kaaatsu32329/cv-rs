@@ -65,9 +65,9 @@ pub fn gaussian3x3(gray_array: &Array2<f32>) -> Array2<f32> {
     Array::from_shape_vec((height, width), gauss_array).unwrap()
 }
 
-pub fn gaussian(gray_array: &Array2<f32>, size: u8) -> Array2<f32> {
+pub fn gaussian(gray_array: &Array2<f32>, size: u8) -> Result<Array2<f32>, String> {
     if size%2 == 0 {
-        panic!("Argument Error.");
+        return Err("Argument error! Size must be odd number.".to_string())
     }
     let mut gauss_array = vec![];
     let width = gray_array.shape()[1] as usize;
@@ -88,7 +88,7 @@ pub fn gaussian(gray_array: &Array2<f32>, size: u8) -> Array2<f32> {
             }
         }
     }
-    Array::from_shape_vec((height, width), gauss_array).unwrap()
+    Ok(Array::from_shape_vec((height, width), gauss_array).unwrap())
 }
 
 pub fn binarization(gray_array: &Array2<f32>, threshold: f32) -> Array2<bool> {
@@ -121,7 +121,7 @@ pub fn harris_corner(gray_array: &Array2<f32>) -> Array2<bool> {
         }
     }
 
-    let gaussed_array = gaussian(&gray_array, 5);
+    let gaussed_array = gaussian(&gray_array, 5).unwrap();
     let i_x = gradient_x(&gaussed_array);
     let i_y = gradient_y(&gaussed_array);
     let i_xx = i_x.clone().mul(&i_x);
@@ -320,4 +320,58 @@ pub fn gradient_y(gray_array: &Array2<f32>) -> Array2<f32> {
         }
     }
     Array::from_shape_vec((height, width), gradient_array).unwrap()
+}
+
+pub fn erosion(bool_array: &Array2<bool>) -> Array2<bool> {
+    let mut erosion_array = vec![];
+    let width = bool_array.shape()[1] as usize;
+    let height = bool_array.shape()[0] as usize;
+
+    for y in 0..height {
+        for x in 0..width {
+            if x == 0 || x == width - 1 || y == 0 || y == height - 1 {
+                if (x == 0 || x == width - 1) && (y == 0 || y == height - 1) {
+                    erosion_array.push(false);
+                } else if x == 0 || x == width - 1 {
+                    erosion_array.push(false);
+                } else if y == 0 || y == height - 1 {
+                    erosion_array.push(false);
+                }
+            } else {
+                if bool_array[[y-1,x-1]] && bool_array[[y-1,x]] && bool_array[[y-1,x+1]] && bool_array[[y,x-1]] && bool_array[[y,x]] && bool_array[[y,x+1]] && bool_array[[y+1,x-1]] && bool_array[[y+1,x]] && bool_array[[y+1,x+1]] {
+                    erosion_array.push(true);
+                } else {
+                    erosion_array.push(false);
+                }
+            }
+        }
+    }
+    Array::from_shape_vec((height, width), erosion_array).unwrap()
+}
+
+pub fn dilation(bool_array: &Array2<bool>) -> Array2<bool> {
+    let mut dilation_array = vec![];
+    let width = bool_array.shape()[1] as usize;
+    let height = bool_array.shape()[0] as usize;
+
+    for y in 0..height {
+        for x in 0..width {
+            if x == 0 || x == width - 1 || y == 0 || y == height - 1 {
+                if (x == 0 || x == width - 1) && (y == 0 || y == height - 1) {
+                    dilation_array.push(false);
+                } else if x == 0 || x == width - 1 {
+                    dilation_array.push(false);
+                } else if y == 0 || y == height - 1 {
+                    dilation_array.push(false);
+                }
+            } else {
+                if bool_array[[y-1,x-1]] || bool_array[[y-1,x]] || bool_array[[y-1,x+1]] || bool_array[[y,x-1]] || bool_array[[y,x]] || bool_array[[y,x+1]] || bool_array[[y+1,x-1]] || bool_array[[y+1,x]] || bool_array[[y+1,x+1]] {
+                    dilation_array.push(true);
+                } else {
+                    dilation_array.push(false);
+                }
+            }
+        }
+    }
+    Array::from_shape_vec((height, width), dilation_array).unwrap()
 }
