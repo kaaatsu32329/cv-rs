@@ -1,5 +1,6 @@
 use ndarray::*;
 use std::ops::Mul;
+use ndarray_linalg::*;
 
 pub trait GetValue {
     fn get_max(&self) -> f32;
@@ -66,6 +67,7 @@ pub fn gaussian3x3(gray_array: &Array2<f32>) -> Array2<f32> {
 }
 
 pub fn gaussian(gray_array: &Array2<f32>, size: u8) -> Array2<f32> {
+    // ToDo: 処理が重いからどうにかする。返り値をResult型にする。
     if size%2 == 0 {
         panic!("Argument Error.");
     }
@@ -107,7 +109,7 @@ pub fn binarization(gray_array: &Array2<f32>, threshold: f32) -> Array2<bool> {
     Array::from_shape_vec((height, width), bin_array).unwrap()
 }
 
-pub fn harris_corner(gray_array: &Array2<f32>) -> Array2<bool> {
+pub fn harris_corner_a(gray_array: &Array2<f32>) -> Array2<bool> {
     let mut pixels = vec![];
     let width = gray_array.shape()[1] as usize;
     let height = gray_array.shape()[0] as usize;
@@ -121,7 +123,7 @@ pub fn harris_corner(gray_array: &Array2<f32>) -> Array2<bool> {
         }
     }
 
-    let gaussed_array = gaussian(&gray_array, 5);
+    let gaussed_array = gaussian(&gray_array, 9);
     let i_x = gradient_x(&gaussed_array);
     let i_y = gradient_y(&gaussed_array);
     let i_xx = i_x.clone().mul(&i_x);
@@ -152,6 +154,36 @@ pub fn harris_corner(gray_array: &Array2<f32>) -> Array2<bool> {
         }
     }
     Array::from_shape_vec((height, width), corner_array).unwrap()
+}
+
+pub fn harris_corner_b(gray_array: &Array2<f32>) -> Array2<f32> {
+    let mut pixels = vec![];
+    let width = gray_array.shape()[1] as usize;
+    let height = gray_array.shape()[0] as usize;
+    let grad_x = gradient_x(&gray_array);
+    let grad_y = gradient_y(&gray_array);
+    let mut i_xx = grad_x.clone().mul(&grad_x);
+    let mut i_yy = grad_y.clone().mul(&grad_y);
+    let mut i_xy = grad_x.clone().mul(&grad_y);
+    i_xx = gaussian(&i_xx, 5);
+    i_yy = gaussian(&i_yy, 5);
+    i_xy = gaussian(&i_xy, 5);
+    let mut matrix = arr2(&[[0., 0.], [0., 0.]]);
+    for y in 0..height {
+        for x in 0..width {
+            matrix[[0,0]] = i_xx[[y,x]];
+            matrix[[0,1]] = i_xy[[y,x]];
+            matrix[[1,0]] = i_xy[[y,x]];
+            matrix[[1,1]] = i_yy[[y,x]];
+            let (eigs, _) = matrix.eig().unwrap();
+            if eigs[0].re > eigs[1].re {
+                pixels.push(eigs[1].re);
+            } else {
+                pixels.push(eigs[0].re);
+            }
+        }
+    }
+    Array::from_shape_vec((height, width), pixels).unwrap()
 }
 
 fn binomial_coefficient(n: u32, k: u32) -> u32 {
@@ -320,4 +352,70 @@ pub fn gradient_y(gray_array: &Array2<f32>) -> Array2<f32> {
         }
     }
     Array::from_shape_vec((height, width), gradient_array).unwrap()
+}
+
+pub fn area_bool(bool_array: &Array2<bool>) -> u16 {
+    let mut area: u16 = 0;
+    let width = bool_array.shape()[1] as usize;
+    let height = bool_array.shape()[0] as usize;
+    for y in 0..height {
+        for x in 0..width {
+            if bool_array[[y,x]] {
+                area += 1;
+            }
+        }
+    }
+    area
+}
+
+pub fn devide_area(bool_array: &Array2<bool>) -> Array2<u8> {
+    // Under developing
+    let mut category = vec![];
+    let width = bool_array.shape()[1] as usize;
+    let height = bool_array.shape()[0] as usize;
+    for y in 0..height {
+        for x in 0..width {
+            if bool_array[[y,x]] {
+                if x == 0 {
+                } else if y == 0 {
+                } else {
+                    if bool_array[[y-1, x-1]] || bool_array[[y-1, x]] || bool_array[[y, x-1]] {
+                    }
+                }
+            } else {
+                category.push(0);
+            }
+        }
+    }
+    Array::from_shape_vec((height, width), category).unwrap()
+}
+
+pub fn watershed() {
+}
+
+pub fn get_homography(rgb_array1: &Array2<bool>, rgb_array2: &Array2<bool>) {
+}
+
+pub fn bool_stack(bool_array: &Array2<bool>, rgb_array: &Array3<u8>) -> Result<Array3<u8>, String> {
+    let width = rgb_array.shape()[1] as usize;
+    let height = rgb_array.shape()[0] as usize;
+    if width != bool_array.shape()[1] || height != bool_array.shape()[0] {
+        Err("Error! Array sizes vary.".to_string())
+    } else {
+        let mut stacked = vec![];
+        for y in 0..height {
+            for x in 0..width {
+                if bool_array[[y,x]] {
+                    stacked.push(255);
+                    stacked.push(0);
+                    stacked.push(0);
+                } else {
+                    stacked.push(rgb_array[[y,x,0]]);
+                    stacked.push(rgb_array[[y,x,1]]);
+                    stacked.push(rgb_array[[y,x,2]]);
+                }
+            }
+        }
+        Ok(Array::from_shape_vec((height, width, 3), stacked).unwrap())
+    }
 }
