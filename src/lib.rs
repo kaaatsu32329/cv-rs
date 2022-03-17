@@ -1,6 +1,9 @@
 #[macro_use(s)]
 extern crate ndarray;
 
+#[macro_use]
+extern crate ndarray_linalg;
+
 mod convert;
 mod process;
 

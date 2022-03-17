@@ -10,3 +10,4 @@ authors = ["kaaatsu32329 <kaaatsu32329@gmail.com>"]
 ndarray = "0.15.4"
 image = "0.24.0"
 rand = "0.8.5"
+ndarray-linalg = { version = "0.14.1", features = ["openblas"] }
